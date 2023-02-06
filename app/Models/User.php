@@ -23,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'number_followers',
     ];
 
     /**
@@ -58,4 +59,30 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $this->notify(new PasswordResetNotification($token));
     }
+
+    public function toots()
+    {
+        return $this->hasMany(Toot::class);
+    }
+
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'user_id', 'followed_user_id');
+    }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'followed_user_id', 'user_id');
+    }
+
+    public function isFollowing(User $user)
+    {
+        return $this->following()->where('followed_user_id', $user->id)->exists();
+    }
+
+    public function isFollowedBy(User $user)
+    {
+        return $this->followers()->where('user_id', $user->id)->exists();
+    }
+    
 }
