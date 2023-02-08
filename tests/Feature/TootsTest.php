@@ -2,15 +2,15 @@
 
 use App\Models\Toot;
 use App\Models\User;
-use App\Notifications\TootLikeNotification;
 use Laravel\Sanctum\Sanctum;
-use App\Notifications\TootReplyNotification;
+use App\Notifications\TootLikeNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 it('it lists toots', function() {
+
     $this->get('/api/toots')
          ->assertStatus(200)
          ->assertJsonCount(0, 'data');
@@ -147,4 +147,49 @@ it('can like a toot', function() {
     $this->assertFalse($toot->isLikedBy($user2));
     $this->assertEquals(0, $toot->likes()->count());
     $this->assertEquals(0, $toot->number_likes);
+});
+
+
+it('can show a single toot', function () {
+    $user = User::factory()->create();
+    $user2 = User::factory()->create();
+    $toot = $user->toots()->save(Toot::factory()->make());
+    $user2->toots()->save(Toot::factory()->make(['reply_id' => $toot->id]));
+
+    $this->json('get', '/api/toots/' . $toot->id)
+         ->assertStatus(200)
+         ->assertJsonFragment(['text' => $toot->text])
+         ->assertJsonCount(1, 'data.replies');
+});
+
+
+it('can show a currated list of toots', function () {
+
+    $user = User::factory()->create();
+    $user2 = User::factory()->create();
+    $user3 = User::factory()->create();
+    $user2->toots()->createMany(Toot::factory(5)->make()->toArray());
+    $user3->toots()->createMany(Toot::factory(2)->make()->toArray());
+    Sanctum::actingAs($user, ['*']);
+
+    // Not following anyone? Nothing here.
+    $this->json('get', '/api/toots/timeline')
+         ->assertStatus(200)
+         ->assertJsonCount(0, 'data');
+
+    // Follow a user, see their toots.
+    $user->following()->save($user2);
+
+    $this->json('get', '/api/toots/timeline')
+         ->assertStatus(200)
+         ->assertJsonCount(5, 'data');
+
+    // Followed user likes something else.
+    $user3->toots()->first()->likes()->create([
+        'user_id' => $user2->id,
+    ]);
+
+    $this->json('get', '/api/toots/timeline')
+         ->assertStatus(200)
+         ->assertJsonCount(6, 'data');
 });

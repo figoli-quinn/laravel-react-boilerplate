@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Toot;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\VerifyEmailNotification;
@@ -63,6 +64,20 @@ class User extends Authenticatable implements MustVerifyEmail
     public function toots()
     {
         return $this->hasMany(Toot::class);
+    }
+
+    public function timeline()
+    {
+        if ($this->following()->exists()) {
+            return Toot::whereIn('user_id', $this->following()->pluck('followed_user_id'))
+                ->orWhereHas('likes', function ($query) {
+                    $query->whereIn('user_id', $this->following()->pluck('followed_user_id'));
+                })
+                ->latest()
+                ->get();
+        }
+
+        return collect([]);
     }
 
     public function following()

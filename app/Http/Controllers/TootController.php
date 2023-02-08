@@ -17,6 +17,13 @@ class TootController extends Controller
         );
     }
 
+    public function timeline(Request $request)
+    {
+        $toots = $request->user()->timeline();
+
+        return TootResource::collection($toots);
+    }
+
     public function store(Request $request)
     {
         $toot = $request->user()->toots()->create($request->all());
@@ -29,6 +36,12 @@ class TootController extends Controller
             $parent->user()->first()->notify(new TootReplyNotification($toot));
         }
 
+        return new TootResource($toot);
+    }
+
+    public function show(Toot $toot)
+    {
+        $toot->load('user', 'replies.user');
         return new TootResource($toot);
     }
 

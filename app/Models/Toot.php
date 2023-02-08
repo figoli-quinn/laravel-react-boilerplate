@@ -12,6 +12,8 @@ class Toot extends Model
     protected $fillable = [
         'text',
         'number_likes',
+        'reply_id',
+        'user_id',
     ];
 
     public function parent()

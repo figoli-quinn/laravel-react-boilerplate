@@ -29,6 +29,8 @@ Route::post('/password/reset', [PasswordController::class, 'reset']);
 Route::get('/user/me', [UserController::class, 'me']);
 Route::post('/register/resend-verification-email', [RegistrationController::class, 'resend']);
 
+Route::get('/toots/timeline', [TootController::class, 'timeline']);
+Route::get('/toots/{toot}', [TootController::class, 'show']);
 Route::get('/toots', [TootController::class, 'index']);
 
 Route::middleware(['auth:sanctum'])->group(function () {

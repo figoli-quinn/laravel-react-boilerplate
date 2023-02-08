@@ -14,6 +14,10 @@ class TootResource extends JsonResource
      */
     public function toArray($request)
     {
-        return parent::toArray($request);
+        return [
+            ...parent::toArray($request),
+            'user' => new UserResource($this->whenLoaded('user')),
+            'replies' => TootResource::collection($this->whenLoaded('replies')),
+        ];
     }
 }
